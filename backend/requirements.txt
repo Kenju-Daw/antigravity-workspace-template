@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+chromadb
+langchain
+langchain-community
+langchain-google-genai
+langchain-ollama
+watchdog
+python-multipart
+websockets
+pydantic
+python-dotenv

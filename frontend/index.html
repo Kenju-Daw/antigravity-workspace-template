@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remote Coding Assistant</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f0f0f0; }
+        #chat { height: 300px; border: 1px solid #ccc; background: white; padding: 10px; overflow-y: scroll; margin-bottom: 10px; }
+        .message { margin: 5px 0; }
+        .user { color: blue; }
+        .agent { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Remote Coding Assistant</h1>
+    <div id="status">Connecting...</div>
+    <div id="chat"></div>
+    <input type="text" id="input" placeholder="Type a message..." style="width: 80%;">
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+        const ws = new WebSocket("ws://localhost:8000/ws");
+        const chat = document.getElementById("chat");
+        const status = document.getElementById("status");
+
+        ws.onopen = () => {
+            status.innerText = "Connected";
+            status.style.color = "green";
+        };
+
+        ws.onmessage = (event) => {
+            const msg = document.createElement("div");
+            msg.className = "message agent";
+            msg.innerText = event.data;
+            chat.appendChild(msg);
+            chat.scrollTop = chat.scrollHeight;
+        };
+
+        ws.onclose = () => {
+            status.innerText = "Disconnected";
+            status.style.color = "red";
+        };
+
+        function sendMessage() {
+            const input = document.getElementById("input");
+            const text = input.value;
+            if (text) {
+                ws.send(text);
+                const msg = document.createElement("div");
+                msg.className = "message user";
+                msg.innerText = "You: " + text;
+                chat.appendChild(msg);
+                input.value = "";
+            }
+        }
+
+        document.getElementById("input").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
