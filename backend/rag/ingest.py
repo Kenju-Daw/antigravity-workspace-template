@@ -1,12 +1,11 @@
 import os
 from typing import List
-# Placeholder for ChromaDB and Embeddings
-# from .store import VectorStore
+from backend.agent.local_client import LocalClient
 
 class IngestionPipeline:
     def __init__(self, watch_dir: str):
         self.watch_dir = watch_dir
-        # self.store = VectorStore()
+        self.local_llm = LocalClient()
         print(f"Ingestion Pipeline watching: {self.watch_dir}")
 
     async def process_folder(self, folder_path: str):
@@ -26,10 +25,12 @@ class IngestionPipeline:
             with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
             
-            # TODO: Use Local LLM to summarize or chunk
-            # chunks = self.local_llm.chunk(content)
-            # self.store.add(chunks)
-            print(f"Ingested {len(content)} bytes from {file_path}")
+            # Use Local LLM to summarize
+            summary = await self.local_llm.generate(f"Summarize this code/text briefly:\n\n{content[:2000]}")
+            print(f"Summary for {os.path.basename(file_path)}: {summary[:100]}...")
+            
+            # TODO: Store in Vector DB
+            # self.store.add(content, summary)
             
         except Exception as e:
             print(f"Error reading {file_path}: {e}")

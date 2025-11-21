@@ -1,25 +1,20 @@
 import os
 from typing import Dict, Any
-# Placeholder for Gemini and Local LLM clients
-# from .gemini_client import GeminiClient
-# from .local_client import LocalClient
+from .gemini_client import GeminiClient
+from .local_client import LocalClient
 
 class Orchestrator:
     def __init__(self):
         self.gemini_api_key = os.getenv("GEMINI_API_KEY")
-        # self.gemini = GeminiClient(self.gemini_api_key)
-        # self.local = LocalClient()
-        print("Orchestrator initialized")
+        self.gemini = GeminiClient(self.gemini_api_key)
+        self.local = LocalClient()
+        print("Orchestrator initialized with Hybrid Intelligence")
 
     async def process_request(self, request: str) -> Dict[str, Any]:
         """
         Decides whether to use Gemini or Local LLM based on complexity.
         """
         print(f"Processing request: {request}")
-        
-        # Simple heuristic for now:
-        # If it looks like a summary or simple task -> Local
-        # If it looks like planning or complex reasoning -> Gemini
         
         complexity = self._assess_complexity(request)
         
@@ -29,17 +24,18 @@ class Orchestrator:
             return await self._delegate_to_local(request)
 
     def _assess_complexity(self, request: str) -> str:
-        # Placeholder logic
-        if "plan" in request.lower() or "design" in request.lower():
+        # Simple heuristic
+        keywords = ["plan", "design", "architecture", "complex", "strategy"]
+        if any(k in request.lower() for k in keywords):
             return "high"
         return "low"
 
     async def _delegate_to_gemini(self, request: str):
-        print("Delegating to Gemini...")
-        # return await self.gemini.generate(request)
-        return {"source": "Gemini", "response": f"Gemini planned: {request}"}
+        print("Delegating to Gemini (Manager)...")
+        response = await self.gemini.generate(request)
+        return {"source": "Gemini", "response": response}
 
     async def _delegate_to_local(self, request: str):
-        print("Delegating to Local LLM...")
-        # return await self.local.generate(request)
-        return {"source": "Local", "response": f"Local model processed: {request}"}
+        print("Delegating to Local LLM (Worker)...")
+        response = await self.local.generate(request)
+        return {"source": "Local", "response": response}

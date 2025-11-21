@@ -1,7 +1,7 @@
 import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from .rag.ingest import IngestionPipeline
+from rag.ingest import IngestionPipeline
 import asyncio
 
 class DropHandler(FileSystemEventHandler):

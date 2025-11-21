@@ -11,7 +11,9 @@ load_dotenv()
 
 # Global instances
 orchestrator = Orchestrator()
-watcher = Watcher(watch_dir=os.path.abspath("../drop_zone"))
+# drop_zone is in the project root (one level up from backend)
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+watcher = Watcher(watch_dir=os.path.join(project_root, "drop_zone"))
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
