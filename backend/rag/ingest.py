@@ -1,6 +1,6 @@
 import os
 from typing import List
-from backend.agent.local_client import LocalClient
+from agent.local_client import LocalClient
 
 class IngestionPipeline:
     def __init__(self, watch_dir: str):
