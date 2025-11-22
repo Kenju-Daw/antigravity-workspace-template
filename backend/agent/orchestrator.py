@@ -2,13 +2,15 @@ import os
 from typing import Dict, Any
 from .gemini_client import GeminiClient
 from .local_client import LocalClient
+from rag.store import VectorStore
 
 class Orchestrator:
     def __init__(self):
         self.gemini_api_key = os.getenv("GEMINI_API_KEY")
         self.gemini = GeminiClient(self.gemini_api_key)
         self.local = LocalClient()
-        print("Orchestrator initialized with Hybrid Intelligence")
+        self.store = VectorStore()
+        print("Orchestrator initialized with Hybrid Intelligence & RAG")
 
     async def process_request(self, request: str) -> Dict[str, Any]:
         """
@@ -16,16 +18,35 @@ class Orchestrator:
         """
         print(f"Processing request: {request}")
         
+        # 1. Retrieve Context
+        context = ""
+        try:
+            query_embedding = await self.local.embed(request)
+            if query_embedding:
+                results = self.store.query(query_embeddings=[query_embedding], n_results=3)
+                if results and results['documents']:
+                    context = "\n".join(results['documents'][0])
+                    print(f"Retrieved {len(results['documents'][0])} context chunks")
+        except Exception as e:
+            print(f"RAG Retrieval Error: {e}")
+
+        # 2. Augment Prompt
+        if context:
+            augmented_request = f"Context:\n{context}\n\nUser Request: {request}"
+        else:
+            augmented_request = request
+
+        # 3. Assess Complexity & Delegate
         complexity = self._assess_complexity(request)
         
         if complexity == "high":
-            return await self._delegate_to_gemini(request)
+            return await self._delegate_to_gemini(augmented_request)
         else:
-            return await self._delegate_to_local(request)
+            return await self._delegate_to_local(augmented_request)
 
     def _assess_complexity(self, request: str) -> str:
         # Simple heuristic
-        keywords = ["plan", "design", "architecture", "complex", "strategy"]
+        keywords = ["plan", "design", "architecture", "complex", "strategy", "code", "implement"]
         if any(k in request.lower() for k in keywords):
             return "high"
         return "low"
