@@ -33,9 +33,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from utils.file_utils import get_file_structure
+
+@app.get("/files")
+async def list_files():
+    """
+    Returns the current file structure of the drop_zone.
+    """
+    return get_file_structure(os.path.join(project_root, "drop_zone"))
+
 @app.get("/")
 async def root():
     return {"message": "Remote Coding Assistant Backend is Running"}
+
+from utils.file_utils import get_file_structure
+
+@app.get("/files")
+async def get_files():
+    """
+    Returns the file structure of the drop_zone.
+    """
+    return get_file_structure(watcher.watch_dir)
 
 @app.post("/agent/ask")
 async def ask_agent(request: str):

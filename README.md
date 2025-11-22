@@ -53,6 +53,6 @@ graph TD
 ```
 
 ## Screenshots
-![Frontend Demo](docs/screenshots/demo.webp)
+![Premium UI](docs/screenshots/premium_ui.png)
 
 
