@@ -55,6 +55,24 @@ async def get_files():
     """
     return get_file_structure(watcher.watch_dir)
 
+from fastapi import UploadFile, File
+import shutil
+
+@app.post("/upload")
+async def upload_files(files: list[UploadFile] = File(...)):
+    """
+    Handles file uploads from the browser drag-and-drop.
+    """
+    for file in files:
+        file_location = os.path.join(watcher.watch_dir, file.filename)
+        # Ensure directory exists if filename contains paths
+        os.makedirs(os.path.dirname(file_location), exist_ok=True)
+        
+        with open(file_location, "wb+") as file_object:
+            shutil.copyfileobj(file.file, file_object)
+            
+    return {"message": f"Successfully uploaded {len(files)} files"}
+
 @app.post("/agent/ask")
 async def ask_agent(request: str):
     response = await orchestrator.process_request(request)
