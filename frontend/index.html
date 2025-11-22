@@ -183,6 +183,67 @@
             opacity: 0.9;
         }
 
+        .icon-btn {
+            padding: 0 15px;
+            background: rgba(255, 255, 255, 0.1);
+            font-size: 1.2rem;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Drop Overlay */
+        .drop-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .drop-message {
+            text-align: center;
+            color: var(--accent);
+            font-size: 1.5rem;
+            font-weight: 600;
+            animation: bounce 1s infinite;
+        }
+
+        /* Thinking Animation */
+        .thinking-dots {
+            display: inline-block;
+            clip-path: inset(0 1ch 0 0);
+            animation: l 1s steps(4) infinite;
+        }
+
+        @keyframes l {
+            to {
+                clip-path: inset(0 -1ch 0 0)
+            }
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -219,387 +280,188 @@
         </div>
 
         <div class="input-area">
-            background-color: var(--bg-color);
-            background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
-            color: var(--text-primary);
-            height: 100vh;
-            display: flex;
-            overflow: hidden;
-            }
+            <input type="file" id="fileInput" multiple style="display: none;" onchange="handleFileSelect(this.files)">
+            <button class="icon-btn" onclick="document.getElementById('fileInput').click()"
+                title="Upload Files">📎</button>
+            <input type="text" id="input" placeholder="Ask about your project..." autocomplete="off">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
 
-            /* Sidebar - File Tree */
-            .sidebar {
-            width: 300px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            border-right: 1px solid var(--glass-border);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            }
+    <!-- Drag and Drop Overlay -->
+    <div id="dropOverlay" class="drop-overlay">
+        <div class="drop-message">
+            <div style="font-size: 4rem;">📂</div>
+            <div>Drop files to ingest</div>
+        </div>
+    </div>
 
-            .sidebar h2 {
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-            color: var(--accent);
-            }
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        const ws = new WebSocket("ws://localhost:8000/ws");
+        const chat = document.getElementById("chat");
+        const status = document.getElementById("status");
+        const fileTree = document.getElementById("fileTree");
+        const dropOverlay = document.getElementById("dropOverlay");
 
-            .file-tree {
-            flex: 1;
-            overflow-y: auto;
-            }
+        // File Upload Logic
+        async function handleFileSelect(files) {
+            if (files.length > 0) {
+                const formData = new FormData();
+                for (let i = 0; i < files.length; i++) {
+                    formData.append("files", files[i]);
+                }
 
-            .file-item {
-            padding: 8px;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: background 0.2s;
-            color: var(--text-secondary);
-            }
-
-            .file-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-primary);
-            }
-
-            .file-item.folder {
-            font-weight: 600;
-            }
-
-            .file-item.file {
-            margin-left: 20px;
-            font-size: 0.9rem;
-            }
-
-            /* Main Content */
-            .main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            }
-
-            /* Header */
-            .header {
-            padding: 20px;
-            border-bottom: 1px solid var(--glass-border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            }
-
-            .status-badge {
-            background: rgba(16, 185, 129, 0.2);
-            color: #34d399;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            }
-
-            /* Chat Area */
-            .chat-container {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            }
-
-            .message {
-            max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            line-height: 1.5;
-            font-size: 0.95rem;
-            animation: fadeIn 0.3s ease;
-            }
-
-            .message.user {
-            align-self: flex-end;
-            background: var(--accent);
-            color: white;
-            border-bottom-right-radius: 2px;
-            }
-
-            .message.agent {
-            align-self: flex-start;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-bottom-left-radius: 2px;
-            }
-
-            .message .source {
-            font-size: 0.7rem;
-            opacity: 0.7;
-            margin-bottom: 4px;
-            display: block;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            }
-
-            /* Input Area */
-            .input-area {
-            padding: 20px;
-            background: var(--glass-bg);
-            border-top: 1px solid var(--glass-border);
-            display: flex;
-            gap: 10px;
-            }
-
-            input {
-            flex: 1;
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--glass-border);
-            padding: 12px;
-            border-radius: 8px;
-            color: white;
-            outline: none;
-            font-family: inherit;
-            }
-
-            input:focus {
-            border-color: var(--accent);
-            }
-
-            button {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 0 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: opacity 0.2s;
-            }
-
-            button:hover {
-            opacity: 0.9;
-            }
-
-            @keyframes fadeIn {
-            from {
-            opacity: 0;
-            transform: translateY(10px);
-            }
-
-            to {
-            opacity: 1;
-            transform: translateY(0);
-            }
-            }
-            </style>
-            </head>
-
-            <body>
-                <div class="sidebar">
-                    <h2>Knowledge Silos</h2>
-                    <div class="file-tree" id="fileTree">
-                        <div style="padding:10px; text-align:center; color:var(--text-secondary)">Loading...</div>
-                    </div>
-                </div>
-
-                <div class="main">
-                    <div class="header">
-                        <h1>Antigravity Assistant</h1>
-                        <span class="status-badge" id="status">Connecting...</span>
-                    </div>
-
-                    <div class="chat-container" id="chat">
-                        <div class="message agent">
-                            <span class="source">System</span>
-                            Hello! I'm your Remote Coding Assistant. Drop a folder to start, or ask me anything.
-                        </div>
-                    </div>
-
-                    <div class="input-area">
-                        <input type="text" id="input" placeholder="Ask about your project..." autocomplete="off">
-                        <button onclick="sendMessage()">Send</button>
-                    </div>
-                </div>
-
-                <!-- Drag and Drop Overlay -->
-                <div id="dropOverlay" class="drop-overlay">
-                    <div class="drop-message">
-                        <div style="font-size: 4rem;">📂</div>
-                        <div>Drop files to ingest</div>
-                    </div>
-                </div>
-
-                <script src="https://d3js.org/d3.v7.min.js"></script>
-                <script>
-                    const ws = new WebSocket("ws://localhost:8000/ws");
-                    const chat = document.getElementById("chat");
-                    const status = document.getElementById("status");
-                    const fileTree = document.getElementById("fileTree");
-                    const dropOverlay = document.getElementById("dropOverlay");
-
-                    // Drag and Drop Logic
-                    document.body.addEventListener("dragover", (e) => {
-                        e.preventDefault();
-                        dropOverlay.style.opacity = "1";
-                        dropOverlay.style.pointerEvents = "all";
+                addMessage("Uploading " + files.length + " files...", "system");
+                try {
+                    const res = await fetch("http://localhost:8000/upload", {
+                        method: "POST",
+                        body: formData
                     });
+                    const result = await res.json();
+                    addMessage(result.message, "system");
+                    fetchFiles(); // Refresh tree
+                } catch (err) {
+                    addMessage("Upload failed: " + err, "system");
+                }
+            }
+        }
 
-                    document.body.addEventListener("dragleave", (e) => {
-                        if (e.relatedTarget === null) {
-                            dropOverlay.style.opacity = "0";
-                            dropOverlay.style.pointerEvents = "none";
-                        }
-                    });
+        // Drag and Drop Logic
+        document.body.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            dropOverlay.style.opacity = "1";
+            dropOverlay.style.pointerEvents = "all";
+        });
 
-                    document.body.addEventListener("drop", async (e) => {
-                        e.preventDefault();
-                        dropOverlay.style.opacity = "0";
-                        dropOverlay.style.pointerEvents = "none";
+        document.body.addEventListener("dragleave", (e) => {
+            if (e.relatedTarget === null) {
+                dropOverlay.style.opacity = "0";
+                dropOverlay.style.pointerEvents = "none";
+            }
+        });
 
-                        const files = e.dataTransfer.files;
-                        if (files.length > 0) {
-                            const formData = new FormData();
-                            for (let i = 0; i < files.length; i++) {
-                                formData.append("files", files[i]);
-                            }
+        document.body.addEventListener("drop", async (e) => {
+            e.preventDefault();
+            dropOverlay.style.opacity = "0";
+            dropOverlay.style.pointerEvents = "none";
 
-                            addMessage("Uploading " + files.length + " files...", "system");
-                            try {
-                                const res = await fetch("http://localhost:8000/upload", {
-                                    method: "POST",
-                                    body: formData
-                                });
-                                const result = await res.json();
-                                addMessage(result.message, "system");
-                                fetchFiles(); // Refresh tree
-                            } catch (err) {
-                                addMessage("Upload failed: " + err, "system");
-                            }
-                        }
-                    });
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files);
+            }
+        });
 
-                    // WebSocket Logic
-                    ws.onopen = () => {
-                        status.innerText = "Online";
-                        status.style.borderColor = "rgba(16, 185, 129, 0.3)";
-                        status.style.color = "#34d399";
-                        fetchFiles();
-                    };
+        // WebSocket Logic
+        ws.onopen = () => {
+            status.innerText = "Online";
+            status.style.borderColor = "rgba(16, 185, 129, 0.3)";
+            status.style.color = "#34d399";
+            fetchFiles();
+        };
 
-                    ws.onmessage = (event) => {
-                        // Remove thinking animation if present
-                        const thinking = document.getElementById("thinking");
-                        if (thinking) thinking.remove();
+        ws.onmessage = (event) => {
+            // Remove thinking animation if present
+            const thinking = document.getElementById("thinking");
+            if (thinking) thinking.remove();
 
-                        // Simple heuristic to detect if it's an agent response or echo
-                        if (event.data.startsWith("Agent:")) {
-                            const content = event.data.replace("Agent: ", "");
-                            // Try to parse JSON if the agent sends structured data
-                            try {
-                                // If it's a dictionary string, we might need better parsing, 
-                                // but for now let's assume it's the raw string from our backend
-                                // which formats it as: {'source': '...', 'response': '...'}
-                                // Since the backend sends a string representation of a dict, 
-                                // we might want to fix the backend to send real JSON.
-                                // For now, just display the text.
-                                addMessage(content, "agent");
-                            } catch (e) {
-                                addMessage(content, "agent");
-                            }
-                        }
-                    };
+            if (event.data.startsWith("Agent:")) {
+                const content = event.data.replace("Agent: ", "");
+                try {
+                    addMessage(content, "agent");
+                } catch (e) {
+                    addMessage(content, "agent");
+                }
+            }
+        };
 
-                    ws.onclose = () => {
-                        status.innerText = "Offline";
-                        status.style.borderColor = "rgba(239, 68, 68, 0.3)";
-                        status.style.color = "#f87171";
-                    };
+        ws.onclose = () => {
+            status.innerText = "Offline";
+            status.style.borderColor = "rgba(239, 68, 68, 0.3)";
+            status.style.color = "#f87171";
+        };
 
-                    // Chat Logic
-                    function addMessage(text, sender) {
-                        const msg = document.createElement("div");
-                        msg.className = `message ${sender}`;
+        // Chat Logic
+        function addMessage(text, sender) {
+            const msg = document.createElement("div");
+            msg.className = `message ${sender}`;
 
-                        let source = sender === "user" ? "You" : (sender === "system" ? "System" : "Assistant");
+            let source = sender === "user" ? "You" : (sender === "system" ? "System" : "Assistant");
 
-                        // Quick hack to parse source from backend string if present
-                        if (text.includes("'source': 'Gemini'")) source = "Gemini (Manager)";
-                        if (text.includes("'source': 'Local'")) source = "Local (Worker)";
+            if (text.includes("'source': 'Gemini'")) source = "Gemini (Manager)";
+            if (text.includes("'source': 'Local'")) source = "Local (Worker)";
 
-                        // Clean up the text if it's that raw dict string
-                        if (text.startsWith("{") && text.includes("'response':")) {
-                            // Very rough extraction
-                            const match = text.match(/'response': '(.*?)'/);
-                            if (match) text = match[1];
-                        }
+            if (text.startsWith("{") && text.includes("'response':")) {
+                const match = text.match(/'response': '(.*?)'/);
+                if (match) text = match[1];
+            }
 
-                        msg.innerHTML = `<span class="source">${source}</span>${text}`;
-                        chat.appendChild(msg);
-                        chat.scrollTop = chat.scrollHeight;
-                    }
+            msg.innerHTML = `<span class="source">${source}</span>${text}`;
+            chat.appendChild(msg);
+            chat.scrollTop = chat.scrollHeight;
+        }
 
-                    function showThinking() {
-                        const msg = document.createElement("div");
-                        msg.id = "thinking";
-                        msg.className = "message agent";
-                        msg.innerHTML = `<span class="source">Assistant</span><span class="thinking-dots">Thinking...</span>`;
-                        chat.appendChild(msg);
-                        chat.scrollTop = chat.scrollHeight;
-                    }
+        function showThinking() {
+            const msg = document.createElement("div");
+            msg.id = "thinking";
+            msg.className = "message agent";
+            msg.innerHTML = `<span class="source">Assistant</span><span class="thinking-dots">Thinking...</span>`;
+            chat.appendChild(msg);
+            chat.scrollTop = chat.scrollHeight;
+        }
 
-                    function sendMessage() {
-                        const input = document.getElementById("input");
-                        const text = input.value;
-                        if (text) {
-                            ws.send(text);
-                            addMessage(text, "user");
-                            showThinking();
-                            input.value = "";
-                        }
-                    }
+        function sendMessage() {
+            const input = document.getElementById("input");
+            const text = input.value;
+            if (text) {
+                ws.send(text);
+                addMessage(text, "user");
+                showThinking();
+                input.value = "";
+            }
+        }
 
-                    document.getElementById("input").addEventListener("keypress", function (event) {
-                        if (event.key === "Enter") sendMessage();
-                    });
+        document.getElementById("input").addEventListener("keypress", function (event) {
+            if (event.key === "Enter") sendMessage();
+        });
 
-                    // File Tree Logic
-                    async function fetchFiles() {
-                        try {
-                            const res = await fetch("http://localhost:8000/files");
-                            const data = await res.json();
-                            renderTree(data, fileTree);
-                            // Also update D3 Graph (Placeholder for now)
-                            // updateGraph(data);
-                        } catch (e) {
-                            fileTree.innerHTML = `<div style="color:red; padding:10px">Failed to load files</div>`;
-                        }
-                    }
+        // File Tree Logic
+        async function fetchFiles() {
+            try {
+                const res = await fetch("http://localhost:8000/files");
+                const data = await res.json();
+                renderTree(data, fileTree);
+            } catch (e) {
+                fileTree.innerHTML = `<div style="color:red; padding:10px">Failed to load files</div>`;
+            }
+        }
 
-                    function renderTree(node, container) {
-                        container.innerHTML = "";
+        function renderTree(node, container) {
+            container.innerHTML = "";
 
-                        function createNode(item, parent) {
-                            const div = document.createElement("div");
-                            div.className = `file-item ${item.type}`;
-                            div.innerText = (item.type === "directory" ? "📁 " : "📄 ") + item.name;
-                            parent.appendChild(div);
+            function createNode(item, parent) {
+                const div = document.createElement("div");
+                div.className = `file-item ${item.type}`;
+                div.innerText = (item.type === "directory" ? "📁 " : "📄 ") + item.name;
+                parent.appendChild(div);
 
-                            if (item.children) {
-                                const childrenContainer = document.createElement("div");
-                                childrenContainer.style.marginLeft = "15px";
-                                item.children.forEach(child => createNode(child, childrenContainer));
-                                parent.appendChild(childrenContainer);
-                            }
-                        }
+                if (item.children) {
+                    const childrenContainer = document.createElement("div");
+                    childrenContainer.style.marginLeft = "15px";
+                    item.children.forEach(child => createNode(child, childrenContainer));
+                    parent.appendChild(childrenContainer);
+                }
+            }
 
-                        if (node.children) {
-                            node.children.forEach(child => createNode(child, container));
-                        } else {
-                            container.innerText = "Drop zone is empty.";
-                        }
-                    }
+            if (node.children) {
+                node.children.forEach(child => createNode(child, container));
+            } else {
+                container.innerText = "Drop zone is empty.";
+            }
+        }
 
-                    // Poll for file changes every 5 seconds
-                    setInterval(fetchFiles, 5000);
-                </script>
-            </body>
+        setInterval(fetchFiles, 5000);
+    </script>
+</body>
 
 </html>

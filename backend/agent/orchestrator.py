@@ -14,14 +14,21 @@ class Orchestrator:
 
     async def process_request(self, request: str) -> Dict[str, Any]:
         """
-        Decides whether to use Gemini or Local LLM based on complexity.
+        Decides whether to use Gemini or Local LLM based on complexity, with fallback.
         """
         print(f"Processing request: {request}")
         
         # 1. Retrieve Context
         context = ""
         try:
+            # Try Local Embedding first
             query_embedding = await self.local.embed(request)
+            
+            # Fallback to Gemini Embedding if Local fails
+            if not query_embedding:
+                print("Local embedding failed, trying Gemini...")
+                query_embedding = await self.gemini.embed(request)
+            
             if query_embedding:
                 results = self.store.query(query_embeddings=[query_embedding], n_results=3)
                 if results and results['documents']:
@@ -42,7 +49,12 @@ class Orchestrator:
         if complexity == "high":
             return await self._delegate_to_gemini(augmented_request)
         else:
-            return await self._delegate_to_local(augmented_request)
+            # Try Local first, fallback to Gemini
+            response = await self._delegate_to_local(augmented_request)
+            if "Error" in response["response"] or "Could not connect" in response["response"]:
+                print("Local LLM failed, falling back to Gemini...")
+                return await self._delegate_to_gemini(augmented_request)
+            return response
 
     def _assess_complexity(self, request: str) -> str:
         # Simple heuristic

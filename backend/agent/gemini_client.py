@@ -25,3 +25,21 @@ class GeminiClient:
             return response.text
         except Exception as e:
             return f"Gemini Error: {e}"
+
+    async def embed(self, text: str) -> list[float]:
+        """
+        Generates embeddings using Gemini.
+        """
+        if not self.model:
+            return []
+            
+        try:
+            result = genai.embed_content(
+                model="models/embedding-001",
+                content=text,
+                task_type="retrieval_query"
+            )
+            return result['embedding']
+        except Exception as e:
+            print(f"Gemini Embedding Error: {e}")
+            return []

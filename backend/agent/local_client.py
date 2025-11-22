@@ -5,7 +5,7 @@ import os
 class LocalClient:
     def __init__(self, base_url: str = "http://localhost:11434"):
         self.base_url = base_url
-        self.model = os.getenv("LOCAL_MODEL", "llama3") # Default to llama3
+        self.model = os.getenv("LOCAL_MODEL", "llama3.2") # Default to llama3.2
 
     async def generate(self, prompt: str) -> str:
         """
@@ -27,7 +27,7 @@ class LocalClient:
                     else:
                         return f"Error: {response.status} - {await response.text()}"
         except Exception as e:
-            return f"Local LLM Connection Error: {e}"
+            return f"Local LLM Error: Could not connect to Ollama at {self.base_url}. Is it running?"
 
     async def embed(self, text: str) -> list[float]:
         """
